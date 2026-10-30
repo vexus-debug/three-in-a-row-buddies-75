@@ -35,6 +35,8 @@ const invoiceSchema = z.object({
     surfaces: z.string().optional(),
     cdtCode: z.string().optional(),
     providerId: z.string().optional(),
+    secondaryProviderId: z.string().optional(),
+    splitRatio: z.coerce.number().min(0).max(100).optional(),
   }).refine((l) => !!l.treatmentId || !!l.description?.trim(), { message: "Select a treatment", path: ["treatmentId"] })).min(1, "Add at least one item"),
   discount: z.coerce.number().min(0).max(100).optional(),
   paymentMethod: z.string().min(1, "Select payment method"),
@@ -132,6 +134,8 @@ export function CreateInvoiceDialog({ open, onOpenChange, preselectedPatientId, 
         surfaces: li.surfaces,
         cdt_code: li.cdtCode,
         provider_id: li.providerId,
+        secondary_provider_id: li.secondaryProviderId || null,
+        split_ratio: li.splitRatio,
       };
     });
 

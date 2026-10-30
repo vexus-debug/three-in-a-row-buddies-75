@@ -22,7 +22,6 @@ export interface ContractRow extends AssociateContract {
   is_active: boolean;
   end_date?: string | null;
   contract_status?: "draft" | "active" | "suspended" | "ended";
-  allowed_chairs?: string[];
 }
 
 export const DEFAULT_CONTRACT: Omit<ContractRow, "staff_id"> = {
@@ -36,7 +35,6 @@ export const DEFAULT_CONTRACT: Omit<ContractRow, "staff_id"> = {
   is_active: true,
   end_date: null,
   contract_status: "active",
-  allowed_chairs: [],
 };
 
 export function useAssociateContracts() {

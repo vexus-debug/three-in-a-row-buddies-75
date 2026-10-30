@@ -137,7 +137,6 @@ export type Database = {
       }
       associate_contracts: {
         Row: {
-          allowed_chairs: string[]
           commission_rate: number
           compensation_basis: string
           contract_status: string
@@ -155,7 +154,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          allowed_chairs?: string[]
           commission_rate?: number
           compensation_basis?: string
           contract_status?: string
@@ -173,7 +171,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          allowed_chairs?: string[]
           commission_rate?: number
           compensation_basis?: string
           contract_status?: string
@@ -5523,6 +5520,7 @@ export type Database = {
       }
       staff: {
         Row: {
+          allowed_chairs: string[]
           created_at: string
           email: string | null
           full_name: string
@@ -5537,6 +5535,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          allowed_chairs?: string[]
           created_at?: string
           email?: string | null
           full_name: string
@@ -5551,6 +5550,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          allowed_chairs?: string[]
           created_at?: string
           email?: string | null
           full_name?: string

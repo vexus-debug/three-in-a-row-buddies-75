@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
+import { ProviderBadge, isContracted } from "@/components/dashboard/associate/ProviderBadge";
 
 const stagger = {
   container: { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } },
@@ -27,15 +28,17 @@ export default function StaffPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null);
   const [query, setQuery] = useState("");
+  const [onlyAssociates, setOnlyAssociates] = useState(false);
   const visibleStaff = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return staff;
-    return staff.filter((member) =>
+    const base = onlyAssociates ? staff.filter((m) => isContracted(m.provider_type)) : staff;
+    if (!term) return base;
+    return base.filter((member) =>
       [member.full_name, member.role, member.specialty, member.phone]
         .filter(Boolean)
         .some((value) => value?.toLowerCase().includes(term)),
     );
-  }, [query, staff]);
+  }, [query, staff, onlyAssociates]);
 
   return (
     <div className="space-y-6">
@@ -91,6 +94,10 @@ export default function StaffPage() {
           className="h-11 rounded-lg border-border/70 bg-card/80 pl-10 shadow-sm"
         />
       </div>
+      <div className="flex gap-2" role="group" aria-label="Filter providers">
+        <Button size="sm" variant={onlyAssociates ? "outline" : "secondary"} onClick={() => setOnlyAssociates(false)}>All staff</Button>
+        <Button size="sm" variant={onlyAssociates ? "secondary" : "outline"} onClick={() => setOnlyAssociates(true)}>Associates &amp; locums</Button>
+      </div>
 
       {isLoading ? (
         <div className="grid max-w-4xl gap-3 lg:grid-cols-2">
@@ -123,6 +130,7 @@ export default function StaffPage() {
                         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${member.status === "active" ? "border-success/20 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
                           {member.status}
                         </span>
+                        {["dentist", "hygienist"].includes(member.role) && <ProviderBadge type={member.provider_type} />}
                       </div>
                       <p className="mt-0.5 truncate text-sm text-muted-foreground">{member.specialty || member.role.replace(/_/g, " ")}</p>
                       <div className="mt-2 flex min-w-0 items-center gap-2">
