@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
+import { ProviderBadge, isContracted } from "@/components/dashboard/associate/ProviderBadge";
 
 const stagger = {
   container: { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } },
@@ -27,9 +28,11 @@ export default function StaffPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null);
   const [query, setQuery] = useState("");
+  const [onlyAssociates, setOnlyAssociates] = useState(false);
   const visibleStaff = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return staff;
+    const base = onlyAssociates ? staff.filter((m) => isContracted(m.provider_type)) : staff;
+    if (!term) return base;
     return staff.filter((member) =>
       [member.full_name, member.role, member.specialty, member.phone]
         .filter(Boolean)

@@ -11,6 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PROVIDER_TYPES } from "@/components/dashboard/associate/ProviderBadge";
+import { ContractTermsTab } from "@/components/dashboard/associate/ContractTermsTab";
+import { useClinicChairs } from "@/hooks/useClinicChairs";
 
 
 interface EditStaffDialogProps {
@@ -30,7 +34,11 @@ export function EditStaffDialog({ staff, open, onOpenChange }: EditStaffDialogPr
   const canAppointManager = canAppointAdmin;
   const canEditLogin = isSuper || ["owner", "admin", "manager"].includes(myRole || "");
   const roles = [...(canAppointAdmin ? ["admin"] : []), ...(canAppointManager ? ["manager"] : []), ...getStaffRoles(currentOrg?.clinic_type as string | undefined)];
-  const [form, setForm] = useState({ full_name: "", role: "dentist", phone: "", email: "", specialty: "", status: "active" });
+  const [form, setForm] = useState({ full_name: "", role: "dentist", phone: "", email: "", specialty: "", status: "active", provider_type: "in_house", allowed_chairs: [] as string[] });
+  const { data: chairRows = [] } = useClinicChairs();
+  const chairNames: string[] = (chairRows as any[]).length ? (chairRows as any[]).map((c) => c.name) : ["Chair 1", "Chair 2", "Chair 3"];
+  const isClinical = ["dentist", "hygienist", "doctor", "specialist", "orthodontist", "surgeon"].includes(form.role);
+  const canSeeContract = isSuper || ["owner", "admin", "accountant"].includes(myRole || "");
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -45,6 +53,8 @@ export function EditStaffDialog({ staff, open, onOpenChange }: EditStaffDialogPr
         email: staff.email || "",
         specialty: staff.specialty || "",
         status: staff.status,
+        provider_type: staff.provider_type || "in_house",
+        allowed_chairs: staff.allowed_chairs || [],
       });
       setNewPassword("");
       setChangingPassword(false);
@@ -114,11 +124,20 @@ export function EditStaffDialog({ staff, open, onOpenChange }: EditStaffDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Staff Member</DialogTitle>
           <DialogDescription>Update details for {staff?.full_name}.</DialogDescription>
         </DialogHeader>
+        <Tabs defaultValue="details">
+        {isClinical && canSeeContract && staff && (
+          <TabsList className="w-full">
+            <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
+            <TabsTrigger value="contract" className="flex-1">Compensation &amp; Contract</TabsTrigger>
+          </TabsList>
+        )}
+        {staff && <TabsContent value="contract"><ContractTermsTab staffId={staff.id} /></TabsContent>}
+        <TabsContent value="details">
         <div className="space-y-3">
           <div className="space-y-1">
             <Label className="text-xs">Full Name *</Label>
@@ -159,6 +178,33 @@ export function EditStaffDialog({ staff, open, onOpenChange }: EditStaffDialogPr
               </SelectContent>
             </Select>
           </div>
+
+          {isClinical && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Provider type</Label>
+                <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PROVIDER_TYPES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Allowed chairs <span className="text-muted-foreground">(none = any)</span></Label>
+                <div className="flex flex-wrap gap-1">
+                  {chairNames.map((c) => {
+                    const on = form.allowed_chairs.includes(c);
+                    return (
+                      <button key={c} type="button" aria-pressed={on}
+                        onClick={() => setForm({ ...form, allowed_chairs: on ? form.allowed_chairs.filter((x) => x !== c) : [...form.allowed_chairs, c] })}
+                        className={`rounded-md border px-2 py-1 text-[11px] font-medium ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground"}`}>
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Password change section */}
           {hasLinkedAccount && canEditLogin && (
@@ -212,7 +258,15 @@ export function EditStaffDialog({ staff, open, onOpenChange }: EditStaffDialogPr
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave} className="bg-secondary hover:bg-secondary/90" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogFooter>
+        </TabsContent>
+        </Tabs>
+        <DialogFooter className="hidden">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSave} className="bg-secondary hover:bg-secondary/90" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Changes"}
