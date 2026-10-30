@@ -20,6 +20,9 @@ export interface ContractRow extends AssociateContract {
   start_date: string | null;
   notes: string | null;
   is_active: boolean;
+  end_date?: string | null;
+  contract_status?: "draft" | "active" | "suspended" | "ended";
+  allowed_chairs?: string[];
 }
 
 export const DEFAULT_CONTRACT: Omit<ContractRow, "staff_id"> = {
@@ -31,6 +34,9 @@ export const DEFAULT_CONTRACT: Omit<ContractRow, "staff_id"> = {
   start_date: null,
   notes: null,
   is_active: true,
+  end_date: null,
+  contract_status: "active",
+  allowed_chairs: [],
 };
 
 export function useAssociateContracts() {
@@ -81,8 +87,8 @@ export function useMyStaffId() {
 async function loadProduction(orgId: string, staffId: string, from: string, to: string) {
   const { data: items, error } = await db
     .from("invoice_items")
-    .select("id, description, line_total, invoice_id, invoices!inner(id, org_id, invoice_date, patient_id, subtotal, discount, total, status)")
-    .eq("provider_id", staffId)
+    .select("id, description, line_total, invoice_id, provider_id, secondary_provider_id, split_ratio, invoices!inner(id, org_id, invoice_date, patient_id, subtotal, discount, total, status)")
+    .or(`provider_id.eq.${staffId},secondary_provider_id.eq.${staffId}`)
     .eq("invoices.org_id", orgId)
     .gte("invoices.invoice_date", from)
     .lte("invoices.invoice_date", to)
@@ -106,6 +112,9 @@ async function loadProduction(orgId: string, staffId: string, from: string, to: 
     invoice_discount: Number(i.invoices.discount),
     invoice_total: Number(i.invoices.total),
     invoice_paid: paid[i.invoice_id] || 0,
+    attribution: !i.secondary_provider_id
+      ? 100
+      : i.provider_id === staffId ? Number(i.split_ratio ?? 100) : 100 - Number(i.split_ratio ?? 100),
   }));
 
   const { data: cases } = await db
@@ -155,7 +164,7 @@ export function useCreatePayoutFromStatement() {
       if (p.statement.lines.length) {
         const { error: e2 } = await db
           .from("commission_payout_items")
-          .insert(p.statement.lines.map((l) => ({ ...l, payout_id: payout.id, org_id: orgId })));
+          .insert(p.statement.lines.map(({ attribution: _a, ...l }) => ({ ...l, payout_id: payout.id, org_id: orgId })));
         if (e2) throw e2;
       }
     },
@@ -196,5 +205,24 @@ export function usePayoutItems(payoutId: string | null) {
       if (error) throw error;
       return (data || []) as any[];
     },
+  });
+}
+
+/** Finalize & lock: marks payouts immutable (database blocks later edits). */
+export function useLockPayouts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await db.from("commission_payouts")
+        .update({ locked_at: new Date().toISOString(), status: "approved" })
+        .in("id", ids).is("locked_at", null).neq("status", "paid");
+      if (error) throw error;
+      const { error: e2 } = await db.from("commission_payouts")
+        .update({ locked_at: new Date().toISOString() })
+        .in("id", ids).is("locked_at", null);
+      if (e2) throw e2;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["commission-payouts"] }); toast.success("Pay period settled and locked"); },
+    onError: (e: any) => toast.error(e.message),
   });
 }

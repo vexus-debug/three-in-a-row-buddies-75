@@ -21,6 +21,8 @@ export interface ProducedLine {
   invoice_discount: number;
   invoice_total: number;
   invoice_paid: number;
+  /** % of this line credited to the dentist (co-provider splits). Defaults to 100. */
+  attribution?: number;
 }
 
 export interface LabCharge {
@@ -42,6 +44,7 @@ export interface PayLine {
   net_amount: number;
   commission_rate: number;
   earned_amount: number;
+  attribution?: number;
 }
 
 export interface PayStatement {
@@ -68,7 +71,8 @@ export function calculatePayStatement(
   const days = new Set<string>();
 
   for (const l of produced) {
-    const g = Number(l.line_total) || 0;
+    const att = l.attribution == null ? 100 : Math.min(100, Math.max(0, Number(l.attribution)));
+    const g = r2(((Number(l.line_total) || 0) * att) / 100);
     const discountShare = l.invoice_subtotal > 0 ? (g / l.invoice_subtotal) * (Number(l.invoice_discount) || 0) : 0;
     let n = g - discountShare;
     if (contract.compensation_basis === "collections") {
@@ -81,7 +85,7 @@ export function calculatePayStatement(
     days.add(l.invoice_date);
     lines.push({
       item_type: "procedure", source_id: l.id, patient_id: l.patient_id, item_date: l.invoice_date,
-      description: l.description, gross_amount: r2(g), deduction_amount: r2(g - n), net_amount: n,
+      description: att < 100 ? `${l.description} (${att}% split)` : l.description, attribution: att, gross_amount: r2(g), deduction_amount: r2(g - n), net_amount: n,
       commission_rate: rate, earned_amount: e,
     });
   }

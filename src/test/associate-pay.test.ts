@@ -31,4 +31,9 @@ describe("associate pay", () => {
     expect(s.guaranteeTopUp).toBe(65000);
     expect(s.totalPayable).toBe(100000);
   });
+  it("credits only the dentist's split share of a co-provided line", () => {
+    const s = calculatePayStatement(base, [line({ attribution: 60 })], []);
+    expect(s.grossProduction).toBe(60000);
+    expect(s.totalPayable).toBe(21000);
+  });
 });
