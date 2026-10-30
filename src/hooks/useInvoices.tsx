@@ -38,6 +38,8 @@ export interface DentalLineFields {
   surfaces?: string | null;
   cdt_code?: string | null;
   provider_id?: string | null;
+  secondary_provider_id?: string | null;
+  split_ratio?: number | null;
 }
 
 const dental = (li: DentalLineFields) => ({
@@ -45,6 +47,8 @@ const dental = (li: DentalLineFields) => ({
   surfaces: li.surfaces?.trim().toUpperCase() || null,
   cdt_code: li.cdt_code?.trim().toUpperCase() || null,
   provider_id: li.provider_id || null,
+  secondary_provider_id: li.provider_id && li.secondary_provider_id ? li.secondary_provider_id : null,
+  split_ratio: li.provider_id && li.secondary_provider_id ? Math.min(100, Math.max(0, Number(li.split_ratio ?? 50))) : 100,
 });
 
 export function useInvoices() {

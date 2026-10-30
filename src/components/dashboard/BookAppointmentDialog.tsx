@@ -1,3 +1,4 @@
+import { ProviderBadge } from "@/components/dashboard/associate/ProviderBadge";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -125,8 +126,12 @@ export function BookAppointmentDialog({ open, onOpenChange, preselectedPatientId
       if (wChair && clash.some((a) => a.chair === wChair)) warnings.push(`${wChair} is already booked at ${wTime}.`);
     }
   }
+  const allowedChairs: string[] = (dentists.find((d: any) => d.id === wDentist) as any)?.allowed_chairs || [];
+  const chairBlocked = !!wChair && allowedChairs.length > 0 && !allowedChairs.includes(wChair);
+  if (chairBlocked) warnings.push(`This dentist may only work in: ${allowedChairs.join(", ")}.`);
 
   function onSubmit(data: BookingForm) {
+    if (chairBlocked) return;
     createAppointment.mutate(
       {
         patient_id: data.patientId,
@@ -190,7 +195,9 @@ export function BookAppointmentDialog({ open, onOpenChange, preselectedPatientId
                   </FormControl>
                   <SelectContent>
                     {dentists.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.full_name} — {d.specialty}</SelectItem>
+                      <SelectItem key={d.id} value={d.id}>
+                        <span className="flex items-center gap-2">{d.full_name} — {d.specialty}<ProviderBadge type={(d as any).provider_type} /></span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
