@@ -266,12 +266,6 @@ export function EditStaffDialog({ staff, open, onOpenChange }: EditStaffDialogPr
         </DialogFooter>
         </TabsContent>
         </Tabs>
-        <DialogFooter className="hidden">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} className="bg-secondary hover:bg-secondary/90" disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
