@@ -137,10 +137,13 @@ export type Database = {
       }
       associate_contracts: {
         Row: {
+          allowed_chairs: string[]
           commission_rate: number
           compensation_basis: string
+          contract_status: string
           created_at: string
           daily_minimum: number
+          end_date: string | null
           id: string
           is_active: boolean
           lab_fee_share: number
@@ -152,10 +155,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allowed_chairs?: string[]
           commission_rate?: number
           compensation_basis?: string
+          contract_status?: string
           created_at?: string
           daily_minimum?: number
+          end_date?: string | null
           id?: string
           is_active?: boolean
           lab_fee_share?: number
@@ -167,10 +173,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allowed_chairs?: string[]
           commission_rate?: number
           compensation_basis?: string
+          contract_status?: string
           created_at?: string
           daily_minimum?: number
+          end_date?: string | null
           id?: string
           is_active?: boolean
           lab_fee_share?: number
@@ -868,6 +877,8 @@ export type Database = {
           calculated_amount: number
           created_at: string
           id: string
+          locked_at: string | null
+          locked_by: string | null
           notes: string | null
           org_id: string
           paid_amount: number
@@ -884,6 +895,8 @@ export type Database = {
           calculated_amount?: number
           created_at?: string
           id?: string
+          locked_at?: string | null
+          locked_by?: string | null
           notes?: string | null
           org_id: string
           paid_amount?: number
@@ -900,6 +913,8 @@ export type Database = {
           calculated_amount?: number
           created_at?: string
           id?: string
+          locked_at?: string | null
+          locked_by?: string | null
           notes?: string | null
           org_id?: string
           paid_amount?: number
@@ -1983,6 +1998,8 @@ export type Database = {
           line_total: number
           provider_id: string | null
           quantity: number
+          secondary_provider_id: string | null
+          split_ratio: number
           surfaces: string | null
           tooth_number: string | null
           treatment_id: string | null
@@ -1997,6 +2014,8 @@ export type Database = {
           line_total?: number
           provider_id?: string | null
           quantity?: number
+          secondary_provider_id?: string | null
+          split_ratio?: number
           surfaces?: string | null
           tooth_number?: string | null
           treatment_id?: string | null
@@ -2011,6 +2030,8 @@ export type Database = {
           line_total?: number
           provider_id?: string | null
           quantity?: number
+          secondary_provider_id?: string | null
+          split_ratio?: number
           surfaces?: string | null
           tooth_number?: string | null
           treatment_id?: string | null
@@ -2027,6 +2048,13 @@ export type Database = {
           {
             foreignKeyName: "invoice_items_provider_id_fkey"
             columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_secondary_provider_id_fkey"
+            columns: ["secondary_provider_id"]
             isOneToOne: false
             referencedRelation: "staff"
             referencedColumns: ["id"]
@@ -5501,6 +5529,7 @@ export type Database = {
           id: string
           org_id: string
           phone: string | null
+          provider_type: string
           role: string
           specialty: string | null
           status: string
@@ -5514,6 +5543,7 @@ export type Database = {
           id?: string
           org_id: string
           phone?: string | null
+          provider_type?: string
           role?: string
           specialty?: string | null
           status?: string
@@ -5527,6 +5557,7 @@ export type Database = {
           id?: string
           org_id?: string
           phone?: string | null
+          provider_type?: string
           role?: string
           specialty?: string | null
           status?: string
